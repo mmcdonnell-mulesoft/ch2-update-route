@@ -1,16 +1,5 @@
 #!/usr/bin/env bash
 
-# Requires connected app with the following permissions:
-# PATCH {{anypointUrl}}/{{runtimefabricAPI}}/organizations/{{anypointOrgId}}/privatespaces/4f2f0846-c00c-4a57-a525-251a713016e5/routes with body
-# {
-#   "networkGateways": [
-#     {
-#       "routes": ["172.16.0.0/12"],
-#       "target": "IGW"
-#     }
-#   ]
-# }
-
 # Client ID Variable
 CID=""
 CSECRET=""
