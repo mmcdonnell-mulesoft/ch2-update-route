@@ -74,8 +74,15 @@ PSALLURI="${APOINTBASE}/runtimefabric/api/organizations/${ORGID}/privatespaces"
 ##############################################
 
 function anypoint_login() {
+    local -n __RET=${1}
     local FULLTOKEN=$(curl -s -X POST -d "client_id=${CID}&client_secret=${CSECRET}&grant_type=client_credentials" ${TOKENURI})
-    echo ${FULLTOKEN} | jq -r .access_token
+    __RET=$(echo ${FULLTOKEN} | jq -r .access_token)
+
+    if [ -z "${__RET}" ]; then
+        echo "ERROR! Couldn't get Token: '${__RET}'"
+        echo ${FULLTOKEN}
+        exit 1;
+    fi
 }
 
 function anypoint_add_route() {
@@ -107,8 +114,7 @@ function anypoint_add_route() {
     done
 
     local NEW_ROUTES=$(jq -n --argjson routes "${ROUTES}" --arg cidr "${CIDR}" '$routes + [$cidr]')
-    # local PATCH_PAYLOAD=$(jq -n --argjson routes "${NEW_ROUTES}" --arg connid "${CONNID}" '{networkGateways: [{routes: $routes, target: $connid}]}')
-    local PATCH_PAYLOAD=$(jq -n --argjson routes "${NEW_ROUTES}" --arg connid "${CONNID}" '{routes: $routes}')
+    local PATCH_PAYLOAD=$(jq -n --argjson routes "${NEW_ROUTES}" '{routes: $routes}')
 
     echo "Updating Private Space: '${PSID}' with new properties now."
     # echo "Calling: ${CONNURI}"
@@ -131,6 +137,9 @@ function anypoint_choose_connection() {
     local TGWCONNS=$(curl -s ${TGWCONNSURI} -H "Accept: application/json" -H "Authorization: Bearer ${TOKEN}")
 
     local CONNECTIONS_ARR=$(jq -n --argjson arr1 "${VPNCONNS}" --argjson arr2 "${TGWCONNS}" '$arr1 + $arr2')
+
+    # echo ${CONNECTIONS_ARR}
+    # exit 99;
     
     for CON in $(echo "${CONNECTIONS_ARR}" | jq -r ".[].name"); do
         PSCONNS_ARR+=("${CON}")
@@ -211,8 +220,7 @@ function prompt_choice() {
 ##############################################
 
 function main() {
-    TOKEN=$(anypoint_login)
-
+    anypoint_login TOKEN
     anypoint_choose_private_space PSID
     anypoint_add_route $PSID
 }
